@@ -1,0 +1,185 @@
+Module needed and installation:
+
+BeautifulSoup: Our primary module contains a method to access a webpage over HTTP.
+
+pip install bs4
+lxml: Helper library to process webpages in python language.
+
+pip install lxml
+requests: Makes the process of sending HTTP requests flawless.the output of the function
+
+pip install requests
+Approach:
+First, we are going to import our required libraries.
+Then we will take the URL stored in our text file.
+We will feed the URL to our soup object which will then extract relevant information from the given URL
+based on the element id we provide it and save it to our CSV file.
+Step 1: Initializing our program.
+We import our beautifulsoup and requests, Create/Open a CSV file to save our gathered data. We declared Header and added a user agent. This ensures that the target website we are going to web scrape doesn’t consider traffic from our program as spam and finally get blocked by them. There are plenty of user agents available here.
+from bs4 import BeautifulSoup
+import requests
+ 
+File = open("out.csv", "a")
+ 
+HEADERS = ({'User-Agent':
+           'Mozilla/5.0 (X11; Linux x86_64)
+                AppleWebKit/537.36 (KHTML, like Gecko)
+                    Chrome/44.0.2403.157 Safari/537.36',
+                           'Accept-Language': 'en-US, en;q=0.5'})
+ 
+webpage = requests.get(URL, headers=HEADERS)
+soup = BeautifulSoup(webpage.content, "lxml")
+Step 2: Retrieving element Ids.
+
+We identify elements by seeing the rendered web pages, but one can’t say the same for our script.  To pinpoint our target element, we will grab its element id and feed it to the script. 
+
+Getting the id of an element is pretty simple. Suppose I need the element id of the products name, All I have to do 
+
+Get to the URL and inspect the text
+In the console, we grab the text next to id=
+We feed it to soup.find and convert the function’s output into a string. We remove commas from the string so that it won’t interfere with the CSV try-except writing format. 
+try:
+		title = soup.find("span",
+						attrs={"id": 'productTitle'})
+	title_value = title.string
+
+		title_string = title_value
+					.strip().replace(',', '')
+		
+except AttributeError:
+
+		title_string = "NA"
+
+		print("product Title = ", title_string)
+Step 3: Saving current information to a text file
+
+We use our file object and write the string we just captured, and end the string with a comma “,” to separate its column when it’s interpreted in a CSV format.
+File.write(f"{title_string},")
+Doing the above 2 steps with all of the attributes we wish to capture from web
+like Item price, availability etc.
+
+Step 4: Closing the file.
+File.write(f"{available},\n")
+ 
+# closing the file
+File.close()
+While writing the last bit of information, notice how we add “\n” to change the line. Not doing so will give us all the required information in one very long row. We close the file using File.close(). This is necessary, if we do not do this we might get an error next time we open the file.
+
+Step 5: Calling the function we just created.
+We open the url.txt in reading mode and iterate over each of its lines until we reach the last one. Calling the main function on each line.
+
+This is how our entire code looks like:
+if __name__ == '__main__':
+# opening our url file to access URLs
+	file = open("url.txt", "r")
+
+	# iterating over the urls
+	for links in file.readlines():
+		main(links)
+# importing libraries
+from bs4 import BeautifulSoup
+import requests
+
+def main(URL):
+	# opening our output file in append mode
+	File = open("out.csv", "a")
+
+	# specifying user agent, You can use other user agents
+	# available on the internet
+	HEADERS = ({'User-Agent':
+				'Mozilla/5.0 (X11; Linux x86_64)
+					AppleWebKit/537.36 (KHTML, like Gecko)
+							Chrome/44.0.2403.157 Safari/537.36',
+								'Accept-Language': 'en-US, en;q=0.5'})
+
+	# Making the HTTP Request
+	webpage = requests.get(URL, headers=HEADERS)
+
+	# Creating the Soup Object containing all data
+	soup = BeautifulSoup(webpage.content, "lxml")
+
+	# retrieving product title
+	try:
+		# Outer Tag Object
+		title = soup.find("span",
+						attrs={"id": 'productTitle'})
+
+		# Inner NavigableString Object
+		title_value = title.string
+
+		# Title as a string value
+		title_string = title_value.strip().replace(',', '')
+
+	except AttributeError:
+		title_string = "NA"
+	print("product Title = ", title_string)
+
+	# saving the title in the file
+	File.write(f"{title_string},")
+
+	# retrieving price
+	try:
+		price = soup.find(
+			"span", attrs={'id': 'priceblock_ourprice'})
+								.string.strip().replace(',', '')
+		# we are omitting unnecessary spaces
+		# and commas form our string
+	except AttributeError:
+		price = "NA"
+	print("Products price = ", price)
+
+	# saving
+	File.write(f"{price},")
+
+	# retrieving product rating
+	try:
+		rating = soup.find("i", attrs={
+						'class': 'a-icon a-icon-star a-star-4-5'})
+									.string.strip().replace(',', '')
+
+	except AttributeError:
+
+		try:
+			rating = soup.find(
+				"span", attrs={'class': 'a-icon-alt'})
+								.string.strip().replace(',', '')
+		except:
+			rating = "NA"
+	print("Overall rating = ", rating)
+
+	File.write(f"{rating},")
+
+	try:
+		review_count = soup.find(
+			"span", attrs={'id': 'acrCustomerReviewText'})
+								.string.strip().replace(',', '')
+
+	except AttributeError:
+		review_count = "NA"
+	print("Total reviews = ", review_count)
+	File.write(f"{review_count},")
+
+	# print availablility status
+	try:
+		available = soup.find("div", attrs={'id': 'availability'})
+		available = available.find("span")
+					.string.strip().replace(',', '')
+
+	except AttributeError:
+		available = "NA"
+	print("Availability = ", available)
+
+	# saving the availability and closing the line
+	File.write(f"{available},\n")
+
+	# closing the file
+	File.close()
+
+
+if __name__ == '__main__':
+# opening our url file to access URLs
+	file = open("url.txt", "r")
+
+	# iterating over the urls
+	for links in file.readlines():
+		main(links)
